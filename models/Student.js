@@ -1,9 +1,9 @@
-const { time } = require('console');
 const mongoose = require('mongoose');
 
 const assessmentTypes = ['FA1', 'FA2', 'FA3', 'SA1', 'SA2', 'FE'];
 const subjects = ['Telugu', 'Hindi', 'English', 'Maths', 'Science', 'Social'];
 
+// Marks schema
 const markSchema = new mongoose.Schema({
   subject: { type: String, enum: subjects, required: true },
   assessments: {
@@ -16,43 +16,61 @@ const markSchema = new mongoose.Schema({
   },
 });
 
+// Each payment record
+const paymentSchema = new mongoose.Schema({
+  amount: { type: Number, required: true },
+  date: { type: Date, default: Date.now },
+  mode: {
+    type: String,
+    enum: ['Cash', 'UPI', 'Netbanking'],
+    required: true
+  },
+  receiptNumber: { type: Number} // auto-incremented globally
+});
+
+// Student schema
 const StudentSchema = new mongoose.Schema({
   name: { type: String, required: true },
   admissionNumber: { type: String, unique: true, required: true },
-  class: { type: String, required: true },                // Added class field
-  dateOfAdmission: { type: Date, required: true, default: Date.now },        // Added dateOfAdmission field
-  marks: [{ subject: String, score: Number }],
-attendance: [
-  {
-    date: { type: Date, default: Date.now },
-    present: Boolean
-  }
-],
-  
+  class: { type: String, required: true },
+  dateOfAdmission: { type: Date, required: true, default: Date.now },
+
+  marks: [markSchema],
+
+  attendance: [
+    {
+      date: { type: Date, default: Date.now },
+      present: Boolean,
+    },
+  ],
+
+  totalFeeAmount: { type: Number, default: 0 }, // total annual fee
+  feeDueDate: { type: Date, default: null }, // overall due date
+  payments: [paymentSchema], // payment records
+
   motherDetails: {
     name: String,
     phone: String,
-    aadharNumber: String,              // Added mother aadhar number
-    bankAccountType: String,           // Added mother bank account type (e.g. Savings/Current)
-    accountNumber: String,             // Added mother bank account number
-    bankName: String,                  // Added bank name
-    branch: String,                   // Added branch
-    ifsc: String                      // Added IFSC code
+    aadharNumber: String,
+    bankAccountType: String,
+    accountNumber: String,
+    bankName: String,
+    branch: String,
+    ifsc: String,
   },
 
   fatherDetails: {
     name: String,
     phone: String,
-    aadharNumber: String               // Added father aadhar number
+    aadharNumber: String,
   },
 
   demographics: {
     dob: Date,
     gender: String,
     address: String,
-    phone: String
+    phone: String,
   },
-  marks: [markSchema],
 });
 
 module.exports = mongoose.model('Student', StudentSchema);

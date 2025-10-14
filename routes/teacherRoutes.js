@@ -17,4 +17,12 @@ router.put('/students/:id', authMiddleware(['admin', 'teacher']), teacherControl
 
 router.put('/teachers/attendance/:id', authMiddleware(['admin']), adminController.updateTeacherAttendance);
 
+// Add a fee to a student
+router.post('/students/:id/fees', authMiddleware(['admin', 'teacher']), teacherController.addFee);
+// Get all fees for a student
+router.get('/students/:id/fees', authMiddleware(['admin', 'teacher','student']), teacherController.getFees);
+// Update a specific fee (e.g. mark paid)
+router.put('/students/:studentId/fees/:feeIndex', authMiddleware(['admin', 'teacher']), teacherController.updateFee);
+
+
 module.exports = router;

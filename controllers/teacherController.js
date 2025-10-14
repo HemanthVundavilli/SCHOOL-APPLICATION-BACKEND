@@ -97,3 +97,51 @@ exports.updateStudentAttendance = async (req, res) => {
     res.status(500).json({ error: 'Server error during attendance update' });
   }
 };
+
+exports.addFee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, dueDate, mode, notes } = req.body;
+    const student = await Student.findById(id);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    student.fees.push({ amount, dueDate, mode, notes });
+    await student.save();
+    res.status(201).json(student.fees);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getFees = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const student = await Student.findById(id, 'fees');
+    if (!student) return res.status(404).json({ error: "Student not found" });
+    res.json(student.fees);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.updateFee = async (req, res) => {
+  try {
+    const { studentId, feeIndex } = req.params;
+    const { paid, paymentDate, receiptNumber } = req.body;
+    const student = await Student.findById(studentId);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    if (!student.fees[feeIndex]) return res.status(404).json({ error: "Fee entry not found" });
+
+    const fee = student.fees[feeIndex];
+    if (paid !== undefined) fee.paid = paid;
+    if (paymentDate) fee.paymentDate = paymentDate;
+    if (receiptNumber) fee.receiptNumber = receiptNumber;
+
+    await student.save();
+    res.json(student.fees[feeIndex]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
