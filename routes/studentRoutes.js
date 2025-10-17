@@ -16,7 +16,7 @@ router.put('/attendance/:id', authMiddleware(['teacher', 'admin']), studentContr
 // router.put('/admin-edit/:id', authMiddleware(['admin', 'teacher']), studentController.adminUpdateStudent);
 router.post('/', authMiddleware(['admin', 'teacher']), studentController.createStudent);
 
-router.put('/students/:id', authMiddleware(['admin', 'teacher']), studentController.updateStudent);
+// router.put('/students/:id', authMiddleware(['admin', 'teacher']), studentController.updateStudent);
 
 
 // --- Student self routes ---
@@ -31,3 +31,48 @@ router.put('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.
 router.post('/students/:id/fees', authMiddleware(['admin', 'teacher']), studentController.addFeePayment);
 
 module.exports = router;
+
+// const express = require('express');
+// const router = express.Router();
+// const authMiddleware = require('../middleware/authMiddleware');
+// const studentController = require('../controllers/studentController');
+
+// // ============================
+// // --- Admin/Teacher Routes ---
+// // ============================
+
+// // Get all students
+// router.get('/', authMiddleware(['admin', 'teacher']), studentController.getAllStudents);
+
+// // Create a new student
+// router.post('/', authMiddleware(['admin', 'teacher']), studentController.createStudent);
+
+// // Update student details (admin/teacher)
+// router.put('/admin-edit/:id', authMiddleware(['admin', 'teacher']), studentController.updateStudent);
+
+// // Update student fees (total fee + due date)
+// router.put('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.updateFees);
+
+// // Add payment for student
+// router.post('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.addFeePayment);
+
+// // Download receipt for a student payment
+// router.get('/:id/fees/:feeId/receipt', authMiddleware(['admin', 'teacher']), studentController.downloadReceipt);
+
+// // Update marks
+// router.put('/marks/:id', authMiddleware(['admin', 'teacher']), studentController.updateMarks);
+
+// // Update attendance
+// router.put('/attendance/:id', authMiddleware(['admin', 'teacher']), studentController.updateAttendance);
+
+// // ============================
+// // --- Student Self Routes ---
+// // ============================
+
+// // Get own profile
+// router.get('/me', authMiddleware(['student']), studentController.getMyDetails);
+
+// // Download own receipt
+// router.get('/me/fees/:feeId/receipt', authMiddleware(['student']), studentController.downloadMyReceipt);
+
+// module.exports = router;
