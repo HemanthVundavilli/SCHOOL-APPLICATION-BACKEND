@@ -92,17 +92,31 @@ exports.getFees = async (req, res) => {
 exports.downloadReceipt = async (req, res) => {
   try {
     const { id, feeId } = req.params;
+
+    // Fetch student
     const student = await Student.findById(id);
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
+    // Fetch payment
     const payment = student.payments.id(feeId);
     if (!payment) return res.status(404).json({ error: 'Payment not found' });
 
-    const browser = await puppeteer.launch();
+    // Launch Puppeteer
+    const browser = await puppeteer.launch({
+      headless: "new",
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
     const page = await browser.newPage();
+
+    // Generate HTML with inline CSS for proper rendering
     const html = generateReceiptHTML(student, payment);
 
+    // Set content and wait for all resources to load
     await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 500)));
+
+    // Generate PDF
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -111,6 +125,7 @@ exports.downloadReceipt = async (req, res) => {
 
     await browser.close();
 
+    // Send PDF
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename=receipt-${payment.receiptNumber}.pdf`,
@@ -118,7 +133,9 @@ exports.downloadReceipt = async (req, res) => {
     });
 
     res.send(pdfBuffer);
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -126,13 +143,14 @@ exports.downloadReceipt = async (req, res) => {
 // GET: logged-in student's profile
 exports.getMyDetails = async (req, res) => {
   try {
-    const student = await Student.findById(req.user.refId);
+    const student = await Student.findById(req.user.id); // was req.user.refId
     if (!student) return res.status(404).json({ error: 'Student not found' });
     res.json(student);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // GET: logged-in student download their own receipt
 

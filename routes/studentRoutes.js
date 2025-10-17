@@ -28,6 +28,6 @@ router.get('/', authMiddleware(['admin', 'teacher']), studentController.getAllSt
 router.get('/:id/fees/:feeId/receipt', authMiddleware(['admin', 'teacher']), studentController.downloadReceipt);
 router.get('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.getFees);
 router.put('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.updateFees);
-router.post('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.addFeePayment);
+router.post('/students/:id/fees', authMiddleware(['admin', 'teacher']), studentController.addFeePayment);
 
 module.exports = router;
