@@ -13,7 +13,7 @@ router.get('/:id', authMiddleware(['student']), studentController.getMyDetails);
 
 router.put('/marks/:id', authMiddleware(['teacher', 'admin']), studentController.updateMarks);
 router.put('/attendance/:id', authMiddleware(['teacher', 'admin']), studentController.updateAttendance);
-// router.put('/admin-edit/:id', authMiddleware(['admin', 'teacher']), studentController.adminUpdateStudent);
+router.put('/admin-edit/:id', authMiddleware(['admin', 'teacher']), studentController.adminUpdateStudent);
 router.post('/', authMiddleware(['admin', 'teacher']), studentController.createStudent);
 
 // router.put('/students/:id', authMiddleware(['admin', 'teacher']), studentController.updateStudent);
