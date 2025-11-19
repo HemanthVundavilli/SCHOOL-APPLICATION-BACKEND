@@ -14,6 +14,7 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:3000",
+    "http://localhost:3001",
     "https://school-application-frontend.vercel.app",
     "https://sripratibha.vercel.app",
     "https://sripratibhaupschool.vercel.app"
@@ -30,11 +31,13 @@ app.options(/.*/, cors());
 app.use(express.json());
 
 // --- Routes ---
-//app.use('/api', studentRoutes);
+app.use('/api', studentRoutes);
+app.use('/api', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/teachers', teacherRoutes);
+
 
 // --- MongoDB Connection ---
 mongoose.connect(process.env.MONGO_URI)
@@ -42,7 +45,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 
 // --- Start Server ---
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 10001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });

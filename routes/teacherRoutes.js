@@ -9,6 +9,9 @@ router.get('/attendance', authMiddleware(['teacher']), teacherController.getMyAt
 router.get('/students', authMiddleware(['admin','teacher']), teacherController.getAllStudents);
 router.post('/students', authMiddleware(['teacher']), teacherController.createStudent);
 
+
+router.delete("/:id", authMiddleware(["admin"]), adminController.deleteTeacher);
+
 // Attendance update route kept with teacher role
 router.put('/students/:id/attendance', authMiddleware(['teacher']), teacherController.updateStudentAttendance);
 
@@ -23,6 +26,5 @@ router.post('/students/:id/fees', authMiddleware(['admin', 'teacher']), teacherC
 router.get('/students/:id/fees', authMiddleware(['admin', 'teacher','student']), teacherController.getFees);
 // Update a specific fee (e.g. mark paid)
 router.put('/students/:studentId/fees/:feeIndex', authMiddleware(['admin', 'teacher']), teacherController.updateFee);
-
 
 module.exports = router;

@@ -5,13 +5,11 @@ const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
 const Admin = require('../models/Admin');
 
-// Admin can create students and teachers, and admins
 exports.register = async (req, res) => {
   const { email, password, role, details } = req.body;
 
-  // Validate required fields and email format
   if (!email || typeof email !== 'string' || email.trim() === '') {
-    return res.status(400).json({ error: 'Email is required and must be non-empty' });
+    return res.status(400).json({ error: 'Email is required' });
   }
   if (!password) {
     return res.status(400).json({ error: 'Password is required' });
@@ -24,21 +22,40 @@ exports.register = async (req, res) => {
   }
 
   try {
-    // Check existing user by email
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ error: 'Email already registered' });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ error: 'Email already registered' });
 
-    // Create profile document based on role
-    let refDoc;
-    if (role === 'student') refDoc = await Student.create(details);
-    else if (role === 'teacher') refDoc = await Teacher.create(details);
-    else if (role === 'admin') refDoc = await Admin.create(details);
-
-    // Hash password and create User
+    // 1. Create user first (no refId yet)
     const hashedPwd = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashedPwd, role, refId: refDoc._id });
+    const user = await User.create({ email, password: hashedPwd, role });
 
-    res.status(201).json({ success: true, userId: user._id });
+    // 2. Create role-specific profile linked to this user
+    let profile;
+    if (role === 'teacher') {
+      const { name, phone, subject, classes, demographicDetails } = details;
+      profile = await Teacher.create({
+        user: user._id,                // ✅ required link
+        name,
+        phone,
+        subject,
+        classes: Array.isArray(classes) ? classes : [],
+        demographicDetails,
+      });
+    } else if (role === 'student') {
+      profile = await Student.create({ ...details, user: user._id });
+    } else if (role === 'admin') {
+      profile = await Admin.create({ ...details, user: user._id });
+    }
+
+    // 3. Update user with refId of created profile
+    user.refId = profile._id;
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: `${role.charAt(0).toUpperCase() + role.slice(1)} registered successfully`,
+      userId: user._id,
+    });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: err.message });
@@ -72,8 +89,25 @@ exports.login = async (req, res) => {
 
 exports.getAllStudents = async (req, res) => {
   try {
-    const students = await Student.find();
-    res.json(students);
+    const students = await Student.find().populate({
+      path: "user",
+      select: "email",
+      strictPopulate: false
+    });
+
+    const formatted = students.map(s => ({
+      _id: s._id,
+      name: s.name,
+      admissionNumber: s.admissionNumber,
+      class: s.class,
+      dateOfAdmission: s.dateOfAdmission,
+      demographics: s.demographics,
+      motherDetails: s.motherDetails,
+      fatherDetails: s.fatherDetails,
+      email: s.user?.email || ""
+    }));
+
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -81,19 +115,75 @@ exports.getAllStudents = async (req, res) => {
 
 exports.getAllTeachers = async (req, res) => {
   try {
-    const teachers = await Teacher.find();
-    res.json(teachers);
+    const teachers = await Teacher.find().populate({
+      path: "user",
+      select: "email", // fetch only email from User
+      strictPopulate: false, // prevent Mongoose 7 error if some teachers lack user
+    });
+
+    const formatted = teachers.map(t => ({
+      _id: t._id,
+      name: t.name,
+      phone: t.phone,
+      subject: t.subject,
+      classes: t.classes,
+      demographicDetails: t.demographicDetails,
+      attendance: t.attendance,
+      email: t.user?.email || "", // attach email if found
+    }));
+
+    res.status(200).json(formatted);
+  } catch (err) {
+    console.error("Error fetching teachers:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+exports.updateTeacher = async (req, res) => {
+  try {
+    const { email, password, ...teacherData } = req.body;
+    const teacher = await Teacher.findById(req.params.id).populate("user");
+
+    if (!teacher) return res.status(404).json({ error: "Teacher not found" });
+
+    // update teacher data
+    Object.assign(teacher, teacherData);
+    await teacher.save();
+
+    // update linked user if email/password provided
+    if (email || password) {
+      const user = await User.findById(teacher.user);
+      if (email) user.email = email;
+      if (password) user.password = await bcrypt.hash(password, 10);
+      await user.save();
+    }
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.updateTeacher = async (req, res) => {
+
+exports.deleteTeacher = async (req, res) => {
   try {
-    const updated = await Teacher.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updated);
+    const teacher = await Teacher.findById(req.params.id);
+
+    if (!teacher) {
+      return res.status(404).json({ error: "Teacher not found" });
+    }
+
+    // Delete teacher document
+    await Teacher.findByIdAndDelete(req.params.id);
+
+    // Delete login user with same email
+    await User.findOneAndDelete({ email: teacher.email });
+
+    res.json({ message: "Teacher deleted successfully" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to delete teacher" });
   }
 };
 
@@ -109,6 +199,10 @@ exports.updateTeacherAttendance = async (req, res) => {
     const teacher = await Teacher.findById(teacherId);
     if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
 
+    if (!teacher.user) {
+      return res.status(400).json({ error: "Teacher 'user' field is missing, cannot update attendance." });
+    }
+
     const existingRecordIndex = teacher.attendance.findIndex(r =>
       r.date.toISOString().slice(0, 10) === new Date(date).toISOString().slice(0, 10)
     );
@@ -122,6 +216,7 @@ exports.updateTeacherAttendance = async (req, res) => {
     await teacher.save();
     res.json({ success: true, attendance: teacher.attendance });
   } catch (err) {
+    console.error('Error in updateTeacherAttendance:', err);
     res.status(500).json({ error: err.message });
   }
 };

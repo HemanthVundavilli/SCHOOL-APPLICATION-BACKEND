@@ -1,11 +1,18 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const TeacherSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   name: { type: String, required: true },
-  phone: String,
-  subject: String,
-  classes: [String],
+  phone: { type: String },
+  subject: { type: String },
+  classes: {
+    type: [String], // Array of class names/numbers
+    default: [],
+  },
   demographicDetails: {
     dob: Date,
     gender: String,
@@ -15,8 +22,8 @@ const TeacherSchema = new mongoose.Schema({
     {
       date: { type: Date, required: true },
       present: { type: Boolean, required: true },
-    }
+    },
   ],
 });
 
-module.exports = mongoose.model('Teacher', TeacherSchema);
+module.exports = mongoose.model("Teacher", TeacherSchema);

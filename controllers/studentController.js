@@ -72,6 +72,7 @@ exports.addFeePayment = async (req, res) => {
     await student.save();
     res.json({ message: 'Payment added successfully', student });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -278,26 +279,46 @@ exports.updateAttendance = async (req, res) => {
     const id = req.params.id;
     const { date, present } = req.body;
 
-    if (!date || typeof present !== 'boolean') {
-      return res.status(400).json({ error: 'Date and present status are required' });
+    if (!date || typeof present !== "boolean") {
+      return res
+        .status(400)
+        .json({ error: "Date and present status are required" });
     }
 
-    const Model = req.user.role === 'student' ? Teacher : Student;
-    const doc = await Model.findById(id);
-    if (!doc) return res.status(404).json({ error: 'Not found' });
+    const student = await Student.findById(id);
+    if (!student) {
+      return res.status(404).json({ error: "Student not found" });
+    }
 
-    // Find attendance entry for date (match start of ISO string)
-    const attIndex = doc.attendance.findIndex(a => a.date?.toISOString().startsWith(date));
+    const dateOnly = date.toString().slice(0, 10);
+
+    // Safe findIndex → works even if a.date is string or empty
+    const attIndex = student.attendance.findIndex((a) => {
+      if (!a.date) return false;
+
+      const d =
+        typeof a.date === "string"
+          ? a.date.slice(0, 10)
+          : a.date.toISOString().slice(0, 10);
+
+      return d === dateOnly;
+    });
+
     if (attIndex >= 0) {
-      // Update existing
-      doc.attendance[attIndex].present = present;
+      student.attendance[attIndex].present = present;
     } else {
-      // Add new attendance record
-      doc.attendance.push({ date: new Date(date), present });
+      student.attendance.push({
+        date: new Date(dateOnly),
+        present,
+      });
     }
 
-    await doc.save();
-    res.json({ message: 'Attendance updated' });
+    await student.save();
+
+    res.json({
+      message: "Attendance updated successfully",
+      attendance: student.attendance,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -354,8 +375,25 @@ exports.updateStudent = async (req, res) => {
   }
 };
 
+exports.deleteStudent = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
 
+    if (!student) {
+      return res.status(404).json({ error: "Student not found" });
+    }
 
+    // Remove student record
+    await Student.findByIdAndDelete(req.params.id);
+
+    // Also remove login user mapped to student
+    await User.findOneAndDelete({ email: student.email });
+
+    res.json({ message: "Student deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete student" });
+  }
+};
 
 
 

@@ -29,6 +29,9 @@ router.get('/:id/fees/:feeId/receipt', authMiddleware(['admin', 'teacher']), stu
 router.get('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.getFees);
 router.put('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.updateFees);
 router.post('/students/:id/fees', authMiddleware(['admin', 'teacher']), studentController.addFeePayment);
+router.delete("/:id", authMiddleware(['admin', 'teacher']), studentController.deleteStudent);
+
+//router.post('/students/:id/fees', authMiddleware(['admin', 'teacher']), studentController.addFeePayment);
 
 module.exports = router;
 
@@ -54,7 +57,6 @@ module.exports = router;
 // router.put('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.updateFees);
 
 // // Add payment for student
-// router.post('/:id/fees', authMiddleware(['admin', 'teacher']), studentController.addFeePayment);
 
 // // Download receipt for a student payment
 // router.get('/:id/fees/:feeId/receipt', authMiddleware(['admin', 'teacher']), studentController.downloadReceipt);

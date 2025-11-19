@@ -30,6 +30,7 @@ const paymentSchema = new mongoose.Schema({
 
 // Student schema
 const StudentSchema = new mongoose.Schema({
+  
   name: { type: String, required: true },
   admissionNumber: { type: String, unique: true, required: true },
   class: { type: String, required: true },
