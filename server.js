@@ -17,7 +17,8 @@ app.use(cors({
     "http://localhost:3001",
     "https://school-application-frontend.vercel.app",
     "https://sripratibha.vercel.app",
-    "https://sripratibhaupschool.vercel.app"
+    "https://sripratibhaupschool.vercel.app",
+    "https://school-application-frontend-ce8fijab7.vercel.app"
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
